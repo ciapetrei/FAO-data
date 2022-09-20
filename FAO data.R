@@ -1,4 +1,4 @@
-setwd ("C:/Users/Apetrei-Admin/Documents/!Local Only/pers/FAO project/My Docs/data analysis")
+setwd ("C:/Users/Apetrei-Admin/Documents/!Local Only/pers/FAO project/My Docs/data analysis GitHub")
 
 ### file to do some graphs for the Food Systems Report Romania
 ### v.2, Oct 2021
@@ -15,9 +15,11 @@ library(tidyr)
 library(ggplot2)
 library(FAOSTAT)
 library(stringr)
+library(cowplot)
 
 prec<-read.csv("WB Climate Knowledge precipitation pr_1901_2020_ROU.csv")
 temp<-read.csv("WB Climate Knowledge Temperatures tas_1901_2020_ROU.csv")
+
 
 dashRO<- read_excel("BSEC INDICATORS per country 19.4.21.xlsx", sheet = "ROMANIA")
 str(dashRO) 
@@ -37,33 +39,36 @@ colnames(temp)[1]<-"Temp"
 data_folder <- "FAO_raw"
 dir.create(data_folder)
 
+temp_FAO<-read.csv("FAO_raw/FAOSTAT_data_en_9-20-2022_ET_TempCh.csv")
+macro_FAO<-read.csv("FAOSTAT_data_en_9-20-2022 MK_AgrShGDP.csv")
 
-#create dataframe with metadata about all datasets
-fao_metadata <-FAOsearch()
-#create dataframew with metadata World Bank
-wb_metadata<-getWDImetaData 
-
-
-#Romania codes
-FAOcountryProfile[FAOcountryProfile$OFFICIAL_FAO_NAME=="Romania",]
-
-#search dataset with title containing "temp" (from temperature)
-FAOsearch(dataset="temp", full = FALSE)
-
-temp_FAO<-get_faostat_bulk(code = "ET", data_folder = data_folder)
-str(temp_FAO)
-
-#save object COMPLETE temp for later reuse
-saveRDS(temp_FAO, "data_raw/temp_FAO_all_data.rds")
-temp_FAO <- readRDS("data_raw/temp_FAO_all_data.rds")
-
-
-#make data set for Greece and Moldova
-temp_FAO_GR<-temp_FAO %>% filter (area == "Greece")
-temp_FAO_MD<-temp_FAO %>% filter (area == "Republic of Moldova")
+# OLD STUFF WHEN THE API was working
+# #create dataframe with metadata about all datasets
+# fao_metadata <-FAOsearch()
+# #create dataframew with metadata World Bank
+# wb_metadata<-getWDImetaData 
+# 
+# 
+# #Romania codes
+# FAOcountryProfile[FAOcountryProfile$OFFICIAL_FAO_NAME=="Romania",]
+# 
+# #search dataset with title containing "temp" (from temperature)
+# FAOsearch(dataset="temp", full = FALSE)
+# 
+# temp_FAO<-get_faostat_bulk(code = "ET", data_folder = data_folder)
+# str(temp_FAO)
+# 
+# #save object COMPLETE temp for later reuse
+# saveRDS(temp_FAO, "data_raw/temp_FAO_all_data.rds")
+# temp_FAO <- readRDS("data_raw/temp_FAO_all_data.rds")
+# 
+# 
+# #make data set for Greece and Moldova
+# temp_FAO_GR<-temp_FAO %>% filter (area == "Greece")
+# temp_FAO_MD<-temp_FAO %>% filter (area == "Republic of Moldova")
 
 #retain only Ro data in original variable
-temp_FAO<- temp_FAO %>% filter (area=="Romania")
+temp_FAO<- temp_FAO %>% filter (Area=="Romania")
 
 
 
@@ -135,11 +140,16 @@ prec_seasons_long<-as.data.frame(
 )
 
 #plot by season FINAL
-prec_seasons_long  %>%
+Fig2b<-prec_seasons_long  %>%
   ggplot(aes(x=Year, y=Rainfall, group=Season, color=Season)) +
     geom_line() +
     geom_smooth(method="lm")+
-    ggtitle("Mean rainfall (mm/month) for summer (Jun-Jul-Aug) and winter (Dec-Jan-Feb) months")
+   # theme(legend.position = c(0.9, 0.9))+
+    #scale_color_discrete(name="Season",
+     #                labels=c("Summer (Jun, Jul, Aug)","Winter (Dec, Jan, Feb)"))+
+    ylab("Rainfall (mm/month)")
+    #ggtitle("Mean rainfall (mm/month) for summer (Jun-Jul-Aug) and winter (Dec-Jan-Feb) months")
+
 
 
 ########################
@@ -169,11 +179,14 @@ temp_dec_ch<- as.data.frame(
 # TEMP change FAO (Is the value in the raw data a change relative to reference period average before 1960?? 
 #YES see http://www.fao.org/faostat/en/#data/ET/metadata)
 
-temp_FAO %>% 
-  filter(months=="Meteorological year", element=="Temperature change", year>=2010) %>%
-  ggplot(aes(x=year, y=value))+ geom_line() + geom_smooth(method="lm") +
-       scale_x_continuous(breaks=seq(2010,2019,by=1))+
-       ggtitle("Temperature change per meteorological year 2010-2020")
+Fig2a<-temp_FAO %>% 
+  filter(Months=="Meteorological year", Element=="Temperature change", Year>=2010 & Year<=2020) %>%
+  ggplot(aes(x=Year, y=Value))+ geom_line() + geom_smooth(method="lm") +
+       scale_x_continuous(breaks=seq(2010,2020,by=1))+
+  ylab("Temperature Change (°C)")
+      # ggtitle("Temperature change per meteorological year 2010-2020")
+
+plot_grid(Fig2a, Fig2b)
 
 temp_FAO %>% 
   filter(months=="Meteorological year", element=="Temperature change", year>=2010) %>%
