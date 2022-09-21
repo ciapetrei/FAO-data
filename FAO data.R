@@ -40,7 +40,9 @@ data_folder <- "FAO_raw"
 dir.create(data_folder)
 
 temp_FAO<-read.csv("FAO_raw/FAOSTAT_data_en_9-20-2022_ET_TempCh.csv")
-macro_FAO<-read.csv("FAOSTAT_data_en_9-20-2022 MK_AgrShGDP.csv")
+macro_FAO<-read.csv("FAO_raw/FAOSTAT_data_en_9-20-2022 MK_AgrShGDP.csv")
+consP_FAO<-read.csv("FAO_raw/FAOSTAT_data_en_9-20-2022 CP_ConsPrices.csv")
+consP_FAO_EU<-read.csv("FAO_raw/FAOSTAT_data_en_9-21-2022 CP_ConsPrices ROEU.csv")
 
 # OLD STUFF WHEN THE API was working
 # #create dataframe with metadata about all datasets
@@ -221,6 +223,82 @@ temp_FAO_MD %>%
   filter(months=="Meteorological year", element=="Temperature change", year>=2010) %>%
   summarise(avg=mean(value))
 
+
+
+###############
+#FAO macro indicators // Agricultural sector value added as share of GDP
+
+FigM1<-macro_FAO %>% 
+  filter(Element=="Share of GDP US$", Item=="Value Added (Agriculture, Forestry and Fishing)", Year>=2010 & Year<=2020) %>%
+  mutate (Value = round(Value, digits=2)) %>%
+  ggplot(aes(x=Year, y=Value, label=Value)) + 
+  geom_line(color="#1C6995") +
+  geom_label(color="#1C6995")+
+  #geom_smooth(method="lm") +
+  scale_x_continuous(breaks=seq(2010,2020,by=1)) +
+  ylab("Value Added as Share of GDP (%)" )
+# ggtitle("Temperature change per meteorological year 2010-2020")
+
+
+##consumer price Index
+FigM2<-consP_FAO %>% 
+  filter(Item=="Consumer Prices, Food Indices (2015 = 100)", Year>=2010 & Year<=2020) %>%
+  mutate(Date=as.Date(paste(Year, Months, "01"), "%Y %B %d"))%>%
+  mutate (Value = round(Value, digits=2)) %>%
+  mutate ("Selected" = ifelse(`Months` == "January", `Value`, NA))%>%
+  ggplot(aes(x=Date, y=Value, label=Selected)) + 
+  geom_line(color="#1C6995") +
+  #geom_point()+
+  geom_label(color="#1C6995")+
+    #geom_smooth(method="lm") +
+  scale_x_date(date_breaks = '1 year', date_labels = "%b-%Y")+
+  xlab("Month")+
+  #scale_x_continuous(breaks=seq(2010,2020,by=1)) +
+  ylab("Consumer Prices, Food Indices (2015 = 100)" )+
+  theme(axis.text.x=element_text(angle=60, hjust=1))
+# ggtitle()
+
+
+## NOT USED IN REPORT / comparison with EU -- probably doesn't make much sense, because each data point is relative to 2015 for that Area
+consP_FAO_EU %>% 
+  filter(Item=="Consumer Prices, Food Indices (2015 = 100)", Year>=2010 & Year<=2020) %>%
+  mutate(Date=as.Date(paste(Year, Months, "01"), "%Y %B %d"))%>%
+  mutate (Value = round(Value, digits=2)) %>%
+  mutate ("Selected" = ifelse(`Months` == "January", `Value`, NA))%>%
+  ggplot(aes(x=Date, y=Value, color=Area, label=Selected)) + 
+  geom_line() + 
+  geom_label()+
+  # geom_point()+
+  scale_x_date(date_breaks = '1 year', date_labels = "%b-%Y")+
+  xlab("Month")+
+  #scale_x_continuous(breaks=seq(2010,2020,by=1)) +
+  ylab("Consumer Prices, Food Indices (2015 = 100)" )+
+  theme(axis.text.x=element_text(angle=60, hjust=1))
+# ggtitle("Temperature change per meteorological year 2010-2020")
+
+#inflation
+
+FigM3<-consP_FAO_EU %>% 
+  filter(Item=="Food price inflation", Year>=2010 & Year<=2020) %>%
+  mutate(Date=as.Date(paste(Year, Months, "01"), "%Y %B %d"))%>%
+  mutate (Value = round(Value, digits=2)) %>%
+  mutate ("Selected" = ifelse(`Months` == "January", `Value`, NA))%>%
+  ggplot(aes(x=Date, y=Value, color=Area, label=Selected)) + 
+  geom_line(aes(linetype=Area)) + 
+  #geom_point()+
+  geom_label(show.legend=FALSE)+
+  #geom_smooth(method="lm") +
+  scale_x_date(date_breaks = '1 year', date_labels = "%b-%Y")+
+  xlab("Month")+
+  #scale_x_continuous(breaks=seq(2010,2020,by=1)) +
+  ylab("Food price inflation (%)" )+
+  theme(axis.text.x=element_text(angle=60, hjust=1))+
+  scale_color_manual(values=c("#8774AC", "#1C6995"))+
+  scale_linetype_manual(values=c("dashed", "solid"))
+
+
+
+plot_grid(FigM2, FigM3)
 
 
 ################

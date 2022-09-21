@@ -1,0 +1,7 @@
+Discount store: rgb(135, 116, 172) #8774AC
+Supermarket: rgb(28, 105, 149) #1C6995
+Rural Store: rgb(87, 143, 176) #578FB0
+Hypermarket: rgb(56, 166, 165) #38A6A5
+Specialised store: rgb(106, 188, 188)
+Cash & Carry: green
+Local Key Account: rgb(74,152,53)
