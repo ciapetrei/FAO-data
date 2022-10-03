@@ -45,6 +45,8 @@ consP_FAO<-read.csv("FAO_raw/FAOSTAT_data_en_9-20-2022 CP_ConsPrices.csv")
 consP_FAO_EU<-read.csv("FAO_raw/FAOSTAT_data_en_9-21-2022 CP_ConsPrices ROEU.csv")
 prodP_FAO<-read.csv("FAO_raw/FAOSTAT_data_en_9-21-2022 PP_ProdPrices.csv")
 
+procprodq_FAO<-read.csv("FAO_raw/FAOSTAT_data_en_10-3-2022_QCL_processed_prods_quant.csv")
+
 # OLD STUFF WHEN THE API was working
 # #create dataframe with metadata about all datasets
 # fao_metadata <-FAOsearch()
@@ -229,7 +231,7 @@ temp_FAO_MD %>%
 ###############
 #FAO macro indicators // Agricultural sector value added as share of GDP
 
-FigM1<-macro_FAO %>% 
+FigM2<-macro_FAO %>% 
   filter(Element=="Share of GDP US$", Item=="Value Added (Agriculture, Forestry and Fishing)", Year>=2010 & Year<2020) %>%
   mutate (Value = round(Value, digits=2)) %>%
   ggplot(aes(x=Year, y=Value, label=Value)) + 
@@ -237,12 +239,12 @@ FigM1<-macro_FAO %>%
   geom_label(color="#1C6995")+
   #geom_smooth(method="lm") +
   scale_x_continuous(breaks=seq(2010,2020,by=1)) +
-  ylab("Value Added as Share of GDP (%)" )
+  ylab("Agricultural Value Added as Share of GDP (%)" )
 # ggtitle("Temperature change per meteorological year 2010-2020")
-
+FigM2
 
 ##consumer price Index
-FigM2<-consP_FAO %>% 
+FigM3<-consP_FAO %>% 
   filter(Item=="Consumer Prices, Food Indices (2015 = 100)", Year>=2010 & Year<=2020) %>%
   mutate(Date=as.Date(paste(Year, Months, "01"), "%Y %B %d"))%>%
   mutate (Value = round(Value, digits=2)) %>%
@@ -258,6 +260,7 @@ FigM2<-consP_FAO %>%
   ylab("Consumer Prices, Food Indices (2015 = 100)" )+
   theme(axis.text.x=element_text(angle=60, hjust=1))
 # ggtitle()
+FigM3
 
 
 ## NOT USED IN REPORT / comparison with EU -- probably doesn't make much sense, because each data point is relative to 2015 for that Area
@@ -277,7 +280,7 @@ consP_FAO_EU %>%
   theme(axis.text.x=element_text(angle=60, hjust=1))
 # ggtitle("Temperature change per meteorological year 2010-2020")
 
-#inflation
+#inflation ### NOT USED IN REPORT
 
 consP_FAO_EU %>% 
   filter(Item=="Food price inflation", Year>=2010 & Year<=2020) %>%
@@ -297,8 +300,8 @@ consP_FAO_EU %>%
   scale_color_manual(values=c("#8774AC", "#1C6995"))+
   scale_linetype_manual(values=c("dashed", "solid"))
 
-##inflation without EU comparison
-consP_FAO %>% 
+##inflation without EU comparison // not used in report
+FigM5<-consP_FAO %>% 
   filter(Item=="Food price inflation", Year>=2010 & Year<2020) %>%
   mutate(Date=as.Date(paste(Year, Months, "01"), "%Y %B %d"))%>%
   mutate (Value = round(Value, digits=2)) %>%
@@ -321,7 +324,7 @@ plot_grid(FigM1, bottom_row, ncol=1, rel_heights = c(1,1.75))
 
 #Figure annual GNI/capita growth
 
-FigM1.1<-dashRO %>% 
+FigM1<-dashRO %>% 
   mutate(TimePeriod=as.numeric(TimePeriod))%>%
   filter(Indicator=="Annual growth in GNI per capita", TimePeriod>=2010 & TimePeriod<=2020) %>%
  # mutate(Date=as.Date(paste(Year, Months, "01"), "%Y %B %d"))%>%
@@ -338,13 +341,14 @@ FigM1.1<-dashRO %>%
   ylab("Annual growth GNI/cap (%)" )
  # theme(axis.text.x=element_text(angle=60, hjust=1))
 # ggtitle()
+FigM1
 
-plot_grid(FigM1.1, FigM1)
+plot_grid(FigM1, FigM2)
 
 
 ### Producer prices
 
-prodP_FAO %>% 
+FigM4<-prodP_FAO %>% 
   filter(Year>=2010 & Year<2020) %>%
   #mutate(Date=as.Date(paste(Year, Months, "01"), "%Y %B %d"))%>%
   mutate (Value = round(Value, digits=2)) %>%
@@ -360,7 +364,28 @@ prodP_FAO %>%
   ylab("Producer Price Index (2014-2016 = 100)")
   #theme(axis.text.x=element_text(angle=60, hjust=1))
 # ggtitle()
+FigM4
 
+
+
+plot_grid(FigM3, FigM4)
+
+
+
+#### NEW FIG PROCESSED PRODUCTS QUANTITIES FigN1 (new)
+
+procprodq_FAO %>%
+  arrange(desc(Value))%>%
+  filter(Item %in% c("Beer of barley, malted", "Sunflower-seed oil, crude", "Wine", "Skim milk of cows", "Raw cane or beet sugar (centrifugal only)", "Rapeseed or canola oil, crude
+"))%>%
+  #group_by(Item)%>%
+  ggplot(aes(x=Year, y=Value, color=Item))+
+       geom_line()+
+       geom_point()+
+       #facet_wrap(~Item)+
+       scale_x_continuous(breaks=seq(2010,2020,by=1))+
+       scale_color_manual(values=c("#8774AC", "#1C6995", "#578FB0", "#38A6A5", "#6ABCBC"))+
+       ylab("Production Quantities (tonnes)")
 
 ################
 
